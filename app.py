@@ -6,7 +6,7 @@ from flask_cors import CORS
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
-from flask import render_template, flask, redirect
+from flask import render_template, flash, redirect
 import os
 
 
