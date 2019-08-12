@@ -6,7 +6,7 @@ from flask_cors import CORS
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
-from flask import render_template
+from flask import render_template, flask, redirect
 import os
 
 
@@ -51,7 +51,12 @@ def index():
 @app.route('/login')
 def login():
     form = LoginForm()
+    if form.validate_on_submit():
+        flash('Login requested for user {}, remember_me={}'.format(
+            form.username.data, form.remember_me.data))
+        return redirect('/index')
     return render_template('login.html', title='Sign In', form=form)
+
 # --- Entrypoint --- #
 
 if __name__ == "__main__":
