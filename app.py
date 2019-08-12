@@ -9,6 +9,7 @@ from wtforms.validators import DataRequired
 from flask import render_template, flash, redirect, url_for
 from datetime import datetime
 import os
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # --- Database Connection Info --- #
@@ -31,6 +32,13 @@ class User(db.Model):
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     posts = db.relationship('Post', backref='user', lazy=True)
+
+    # Used to set and verify user passwords
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
