@@ -3,10 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_restless import APIManager
 from flask_cors import CORS
-import os
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
+from flask import render_template
+import os
+
 
 # --- Database Connection Info --- #
 class Config (object):
@@ -28,10 +30,14 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign In')
 
 # --- Routes --- #
+
 @app.route('/')
 @app.route('/index')
 def index():
-    return "Hello, World!"
+    user = {'username': 'Barrett'}
+    return render_template('index.html', title='Home', user=user)
+
+# --- Entrypoint --- #
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", threaded='True')
