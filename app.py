@@ -16,6 +16,7 @@ class Config (object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'you-will-never-guess'
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -23,7 +24,7 @@ CORS(app)
 
 # --- Forms --- #
 
-class LoginForm(FlaskForm):
+class LoginForm (FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
