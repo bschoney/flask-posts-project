@@ -1,0 +1,14 @@
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - The Best Blog</title>
+        {% else %}
+        <title>Welcome to The Best Blog!</title>
+        {% endif %}
+    </head>
+    <body>
+        <div>The Best Blog: <a href="/index">Home</a></div>
+        <hr>
+        {% block content %}{% endblock %}
+    </body>
+</html>
