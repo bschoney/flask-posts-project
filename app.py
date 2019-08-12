@@ -6,7 +6,7 @@ from flask_cors import CORS
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
-from flask import render_template, flash, redirect
+from flask import render_template, flash, redirect, url_for
 import os
 
 
@@ -21,6 +21,14 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 CORS(app)
+
+# --- Database Tables --- #
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    email = db.Column(db.String(120), index=True, unique=True)
+    password_hash = db.Column(db.String(128))
 
 # --- Forms --- #
 
@@ -54,7 +62,7 @@ def login():
     if form.validate_on_submit():
         flash('Login requested for user {}, remember_me={}'.format(
             form.username.data, form.remember_me.data))
-        return redirect('/index')
+        return redirect(url_for('index'))
     return render_template('login.html', title='Sign In', form=form)
 
 # --- Entrypoint --- #
