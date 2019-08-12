@@ -35,7 +35,17 @@ class LoginForm(FlaskForm):
 @app.route('/index')
 def index():
     user = {'username': 'Barrett'}
-    return render_template('index.html', title='Home', user=user)
+    posts = [
+        {
+            'author': {'username': 'Kyle'},
+            'body': 'Beautiful day in Austin!'
+        },
+        {
+            'author': {'username': 'Natalie'},
+            'body': 'Beautifuler day in Austin!'
+        }
+    ]
+    return render_template('index.html', title='Home', user=user, posts=posts)
 
 # --- Entrypoint --- #
 
