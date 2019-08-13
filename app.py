@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 from flask_restless import APIManager
 from flask_cors import CORS
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, ValidationError, DataRequired, Email, EqualTo, Length
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -32,6 +32,12 @@ CORS(app)
 
 # --- Database Tables --- #
 
+# Auxiliary table to handle many-to-many relationship between users
+followers = db.Table('followers',
+    db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
+)
+
 class User (UserMixin, db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
@@ -41,6 +47,11 @@ class User (UserMixin, db.Model):
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     posts = db.relationship('Post', backref='user', lazy=True)
+    followed = db.relationship(
+        'User', secondary=followers,
+        primaryjoin=(followers.c.follower_id == id),
+        secondaryjoin=(followers.c.followed_id == id),
+        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
 
     # Set passwords
     def set_password(self, password):
@@ -55,13 +66,25 @@ class User (UserMixin, db.Model):
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size)
 
+    # --- Following/Fallowers ---#
+    def follow(self, user):
+        if not self.is_following(user):
+            self.followed.append(user)
+
+    def unfollow(self, user):
+        if self.is_following(user):
+            self.followed.remove(user)
+
+    def is_following(self, user):
+        return self.followed.filter(
+            followers.c.followed_id == user.id).count() > 0
+
 class Post (db.Model):
     __tablename__ = 'post'
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.String(140))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
 
 # --- Login --- #
 
@@ -93,11 +116,22 @@ class EditProfileForm(FlaskForm):
     about_me = TextAreaField('About me', validators=[Length(min=0, max=140)])
     submit = SubmitField('Submit')
 
+    def __init__(self, original_username, *args, **kwargs):
+        super(EditProfileForm, self).__init__(*args, **kwargs)
+        self.original_username = original_username
+
+    def validate_username(self, username):
+        if username.data != self.original_username:
+            user = User.query.filter_by(username=self.username.data).first()
+            if user is not None:
+                raise ValidationError('Please use a different username.')
+
 class LoginForm (FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
+
 
 # --- Routes --- #
 
@@ -165,7 +199,7 @@ def user(username):
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    form = EditProfileForm()
+    form = EditProfileForm(current_user.username)
     if form.validate_on_submit():
         current_user.username = form.username.data
         current_user.about_me = form.about_me.data
@@ -177,6 +211,12 @@ def edit_profile():
         form.about_me.data = current_user.about_me
     return render_template('edit_profile.html', title='Edit Profile',
                            form=form)
+
+@app.before_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.utcnow()
+        db.session.commit()
 
 # --- Entrypoint --- #
 
