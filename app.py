@@ -11,6 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.urls import url_parse
 from flask_login import LoginManager, logout_user, current_user, login_user, login_required, UserMixin
 from hashlib import md5
+from flask_bootstrap import Bootstrap
 
 # --- Flask App --- #
 app = Flask(__name__)
@@ -25,6 +26,7 @@ class Config (object):
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+bootstrap = Bootstrap(app)
 
 # --- User Login Configuration --- #
 login = LoginManager(app)
