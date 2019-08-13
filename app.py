@@ -5,7 +5,7 @@ from flask_restless import APIManager
 from flask_cors import CORS
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, ValidationError, DataRequired, Email, EqualTo
+from wtforms.validators import DataRequired, ValidationError, DataRequired, Email, EqualTo, Length
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.urls import url_parse
@@ -38,6 +38,8 @@ class User (UserMixin, db.Model):
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
+    about_me = db.Column(db.String(140))
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     posts = db.relationship('Post', backref='user', lazy=True)
 
     # Set passwords
@@ -67,7 +69,7 @@ class Post (db.Model):
 def load_user(id):
     return User.query.get(int(id))
 
-# --- Registration Form --- #
+# --- Forms --- #
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -86,7 +88,10 @@ class RegistrationForm(FlaskForm):
         if user is not None:
             raise ValidationError('Please use a different email address.')
 
-# --- Forms --- #
+class EditProfileForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    about_me = TextAreaField('About me', validators=[Length(min=0, max=140)])
+    submit = SubmitField('Submit')
 
 class LoginForm (FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -156,6 +161,22 @@ def user(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(user_id=user.id).all()
     return render_template('user.html', user=user, posts=posts)
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm()
+    if form.validate_on_submit():
+        current_user.username = form.username.data
+        current_user.about_me = form.about_me.data
+        db.session.commit()
+        flash('Your changes have been saved.')
+        return redirect(url_for('edit_profile'))
+    elif request.method == 'GET':
+        form.username.data = current_user.username
+        form.about_me.data = current_user.about_me
+    return render_template('edit_profile.html', title='Edit Profile',
+                           form=form)
 
 # --- Entrypoint --- #
 
