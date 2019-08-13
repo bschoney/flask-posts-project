@@ -19,7 +19,7 @@ app = Flask(__name__)
 class Config (object):
     SQLALCHEMY_DATABASE_URI = "postgresql://posts:postspassword@posts.cbryqhibnhym.us-east-1.rds.amazonaws.com:5432/posts"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    POSTS_PER_PAGE = 3
+    POSTS_PER_PAGE = 25
     SECRET_KEY = 'you-will-never-guess'
 
 app.config.from_object(Config)
